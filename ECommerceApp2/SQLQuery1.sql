@@ -1,0 +1,46 @@
+﻿CREATE DATABASE ECommerceDB2
+GO
+USE ECommerceDB2
+
+CREATE TABLE Users(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+Username NVARCHAR(200) NOT NULL UNIQUE,
+[Password] NVARCHAR(200) NOT NULL,
+Email NVARCHAR(250) NOT NULL,
+CHECK(LEN([Password])>=10)
+)
+
+GO
+
+CREATE TABLE Products(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+Title NVARCHAR(500) NOT NULL,
+Price MONEY NOT NULL DEFAULT(0),
+UnitsInStock INT NOT NULL DEFAULT(0),
+CHECK(Price>=0)
+)
+
+GO
+
+CREATE TABLE Orders(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+UserId INT FOREIGN KEY REFERENCES Users([Id]) NOT NULL,
+ProductId INT FOREIGN KEY REFERENCES Products([Id]) NOT NULL,
+Quantity INT NOT NULL DEFAULT(0) CHECK(Quantity>0),
+HasCompleted BIT NOT NULL DEFAULT(0),
+OrderDate DATETIME NOT NULL DEFAULT(GETDATE())
+)
+
+INSERT INTO Products([Title],[Price],[UnitsInStock])
+VALUES('Asus Zenbook DUO',3900,20),('Samsung Galaxy TAB 10 FE',900,15),
+('Iphone 16 PRO Max',3200,50),
+('Asus Rog Strix G16',2700,20)
+
+SELECT * FROM Products
+----= < => =
+----Username=Aydin123
+----Username
+----Aydin123
+----SELECT *
+----FROM Users
+----WHERE Username=Aydin123
