@@ -46,10 +46,12 @@ namespace ECommerceApp2.Services
                 Console.WriteLine();
             }
         }
+        static UserRepository userRepository = new UserRepository();
+        static ProductRepository productRepository = new ProductRepository();
+        static OrderRepository orderRepository = new OrderRepository();
+        static List<Order> orders = new List<Order>();
         public static void Start()
         {
-            var userRepository = new UserRepository();
-            var productRepository = new ProductRepository();
             while (true)
             {
                 Console.ResetColor();
@@ -81,28 +83,57 @@ namespace ECommerceApp2.Services
                                         var products = productRepository.GetAll().ToList();
                                         if (products.Any())
                                         {
+                                            orders = orderRepository.GetMyOrders(user.Id).ToList();
                                             while (true)
                                             {
                                                 ShowAllProducts(products);
-                                                Console.WriteLine("Select product NO to add CART");
-                                                int no = int.Parse(Console.ReadLine()) - 1;
-                                                if (no >= 0 && no <= (products.Count()))
+                                                Console.WriteLine("Click [0] to go CART");
+                                                Console.WriteLine("Click [No] to add CART");
+
+                                                int noOrZero = int.Parse(Console.ReadLine());
+
+                                                if (noOrZero == 0)
                                                 {
-                                                    var currentProduct = products[no];
-                                                    ShowCurrentProduct(currentProduct);
-                                                    var key = Console.ReadKey();
-                                                    if (key.Key == ConsoleKey.Escape)
+                                                    ShowCart(orders);
+                                                    var key = Console.ReadKey().Key;
+                                                    if (key == ConsoleKey.Escape)
                                                     {
-                                                        Console.Clear();
                                                         continue;
                                                     }
                                                 }
-                                                else
+                                                else if (noOrZero >= 1 && noOrZero <= products.Count())
                                                 {
-                                                    ShowInfo($"Range should be between 0 and {products.Count()}");
-                                                    Thread.Sleep(1000);
-                                                    Console.ResetColor();
+                                                    var prodId = products[noOrZero - 1]?.Id;
+                                                    var order = new Order
+                                                    {
+                                                        ProductId = prodId ?? -1,
+                                                        UserId = user.Id,
+                                                        Quantity = 1,
+                                                        OrderDate = DateTime.Now,
+                                                        HasCompleted = false
+                                                    };
+
+                                                    var orderOld = orders.FirstOrDefault(o => o.UserId == user.Id && o.ProductId == prodId);
+                                                    if (orderOld != null)
+                                                    {
+                                                        orderRepository.UpdateOrderQuantity(orderOld, orderOld.Quantity + 1);
+                                                        Console.WriteLine("Update order quantity successfully");
+                                                    }
+                                                    else
+                                                    {
+                                                        orderRepository.Add(order);
+                                                        Console.WriteLine("Added to cart successfully");
+                                                    }
+                                                    Thread.Sleep(2000);
+                                                    orders = orderRepository.GetMyOrders(user.Id).Where(o => !o.HasCompleted).ToList();
+                                                    ShowCart(orders);
+                                                    Console.WriteLine("Click any key to continue");
+                                                    Console.ReadKey();
+
                                                 }
+
+                                                ///////////////////
+
                                             }
                                         }
                                         else
@@ -187,6 +218,140 @@ namespace ECommerceApp2.Services
             }
         }
 
+        private static void ShowCart(List<Order> orders)
+        {
+            Console.Clear();
+            Console.WriteLine("Your Cart");
+            if (!orders.Any())
+            {
+                Console.WriteLine("No item exist in your cart");
+            }
+            else
+            {
+                ShowAllOrders(orders);
+                var total = orders.Sum(o => o.Product.Price * o.Quantity);
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"\t\t\t\t\tTotal : {total}$");
+                Console.ResetColor();
+                EditCart(orders.ToList());
+                Console.WriteLine("Click ESC to go back");
+            }
+        }
+        public static Order CurrentOrder = null;
+        public static int index = 1;
+        private static void EditCart(List<Order> orders)
+        {
+            CurrentOrder = orders[0];
+            ShowCartOrderInEdit(orders);
 
+            while (true)
+            {
+
+
+            Console.WriteLine("Select [NO] to Edit item or click [0] to go back or click [-1] to save changes");
+            var key = Console.ReadKey().Key;
+            if (key == ConsoleKey.UpArrow)
+            {
+                if (index - 1 >= 1)
+                {
+                    --index;
+                    CurrentOrder = orders[index-1];
+                    ShowCartOrderInEdit(orders);
+                }
+            }
+            else if (key == ConsoleKey.DownArrow)
+            {
+                if (index + 1 <= orders.Count())
+                {
+                    ++index;
+                    CurrentOrder = orders[index - 1];
+                    ShowCartOrderInEdit(orders);
+                }
+            }
+            else if (key == ConsoleKey.Enter)
+            {
+                //Update save changes
+            }
+            else if (key == ConsoleKey.Escape)
+            {
+                return;
+            }
+                //else
+                //{
+                //    ShowInfo("Select correct no !");
+                //}
+            }
+
+        }
+
+        private static void ShowCartOrderInEdit(List<Order> orders)
+        {
+            Console.Clear();
+            Console.WriteLine("Your Cart");
+            Console.WriteLine();
+            int no = 0;
+            foreach (var order in orders)
+            {
+                if (CurrentOrder != null && order.Id == CurrentOrder.Id)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                }
+                else
+                {
+                    Console.ResetColor();
+                }
+                var price = order?.Product?.Price;
+                Console.WriteLine($"NO : [{++no}]");
+                Console.WriteLine($"Product : {order?.Product?.Title} ({order?.Quantity} items) - {price}$  Total : {price * order?.Quantity}");
+                Console.WriteLine($"ORDER DATE : {order?.OrderDate.ToLongDateString()} - {order?.OrderDate.ToShortTimeString()}");
+                Console.WriteLine();
+
+            }
+
+            var total = orders.Sum(o => o.Product.Price * o.Quantity);
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"\t\t\t\t\tTotal : {total}$");
+            Console.ResetColor();
+
+            //var key = Console.ReadKey().Key;
+            //if (key == ConsoleKey.Escape)
+            //{
+            //    CurrentOrder = null;
+            //    EditCart(orders);
+            //    return;
+            //}
+            //else if (key == ConsoleKey.UpArrow)
+            //{
+            //    if (CurrentOrder?.Quantity + 1 <= CurrentOrder?.Product.UnitsInStock)
+            //    {
+            //        CurrentOrder.Quantity++;
+            //    }
+            //    ShowCartOrderInEdit(orders);
+            //}
+            //else if (key == ConsoleKey.DownArrow)
+            //{
+            //    if (CurrentOrder?.Quantity - 1 >= 1)
+            //    {
+            //        CurrentOrder.Quantity--;
+            //    }
+            //    ShowCartOrderInEdit(orders);
+            //}
+            return;
+
+        }
+
+        private static void ShowAllOrders(List<Order> orders)
+        {
+            Console.WriteLine();
+            int no = 0;
+            foreach (var order in orders)
+            {
+                var price = order?.Product?.Price;
+                Console.WriteLine($"NO : [{++no}]");
+                Console.WriteLine($"Product : {order?.Product?.Title} ({order?.Quantity} items) - {price}$  Total : {price * order?.Quantity}");
+                Console.WriteLine($"ORDER DATE : {order?.OrderDate.ToLongDateString()} - {order?.OrderDate.ToShortTimeString()}");
+                Console.WriteLine();
+            }
+        }
     }
 }
