@@ -11,5 +11,6 @@ namespace ECommerceApp2.DataAccess.Abstractions
     {
         IEnumerable<Order> GetMyOrders(int userId);
         bool UpdateOrderQuantity(Order order,int quantity);
+        bool UpdateOrders(IEnumerable<Order> orders);
     }
 }

@@ -246,36 +246,47 @@ namespace ECommerceApp2.Services
 
             while (true)
             {
-
-
-            Console.WriteLine("Select [NO] to Edit item or click [0] to go back or click [-1] to save changes");
-            var key = Console.ReadKey().Key;
-            if (key == ConsoleKey.UpArrow)
-            {
-                if (index - 1 >= 1)
+                var key = Console.ReadKey().Key;
+                if (key == ConsoleKey.UpArrow)
                 {
-                    --index;
-                    CurrentOrder = orders[index-1];
-                    ShowCartOrderInEdit(orders);
+                    if (index - 1 >= 1)
+                    {
+                        --index;
+                        CurrentOrder = orders[index - 1];
+                        ShowCartOrderInEdit(orders);
+                    }
                 }
-            }
-            else if (key == ConsoleKey.DownArrow)
-            {
-                if (index + 1 <= orders.Count())
+                else if (key == ConsoleKey.DownArrow)
                 {
-                    ++index;
+                    if (index + 1 <= orders.Count())
+                    {
+                        ++index;
+                        CurrentOrder = orders[index - 1];
+                        ShowCartOrderInEdit(orders);
+                    }
+                }
+                else if (key == ConsoleKey.Spacebar)
+                {
+                    var res = orderRepository.UpdateOrders(orders);
+                    if (res)
+                    {
+                        Console.WriteLine("Orders updated successfully");
+
+                    }
+                }
+                else if (key == ConsoleKey.Enter)
+                {
                     CurrentOrder = orders[index - 1];
-                    ShowCartOrderInEdit(orders);
+                    ShowCartOrderInEdit(orders, true);
+                    Console.WriteLine("Select [NO] to Edit item or click [0] to go back or click [-1] to save changes");
+
                 }
-            }
-            else if (key == ConsoleKey.Enter)
-            {
-                //Update save changes
-            }
-            else if (key == ConsoleKey.Escape)
-            {
-                return;
-            }
+                else if (key == ConsoleKey.Escape)
+                {
+                    Console.WriteLine("Select [NO] to Edit item or click [0] to go back or click [-1] to save changes");
+
+                    return;
+                }
                 //else
                 //{
                 //    ShowInfo("Select correct no !");
@@ -284,7 +295,7 @@ namespace ECommerceApp2.Services
 
         }
 
-        private static void ShowCartOrderInEdit(List<Order> orders)
+        private static void ShowCartOrderInEdit(List<Order> orders, bool isActive = false)
         {
             Console.Clear();
             Console.WriteLine("Your Cart");
@@ -312,30 +323,32 @@ namespace ECommerceApp2.Services
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"\t\t\t\t\tTotal : {total}$");
             Console.ResetColor();
-
-            //var key = Console.ReadKey().Key;
-            //if (key == ConsoleKey.Escape)
-            //{
-            //    CurrentOrder = null;
-            //    EditCart(orders);
-            //    return;
-            //}
-            //else if (key == ConsoleKey.UpArrow)
-            //{
-            //    if (CurrentOrder?.Quantity + 1 <= CurrentOrder?.Product.UnitsInStock)
-            //    {
-            //        CurrentOrder.Quantity++;
-            //    }
-            //    ShowCartOrderInEdit(orders);
-            //}
-            //else if (key == ConsoleKey.DownArrow)
-            //{
-            //    if (CurrentOrder?.Quantity - 1 >= 1)
-            //    {
-            //        CurrentOrder.Quantity--;
-            //    }
-            //    ShowCartOrderInEdit(orders);
-            //}
+            if (isActive)
+            {
+                var key = Console.ReadKey().Key;
+                if (key == ConsoleKey.Escape)
+                {
+                    CurrentOrder = null;
+                    EditCart(orders);
+                    return;
+                }
+                else if (key == ConsoleKey.UpArrow)
+                {
+                    if (CurrentOrder?.Quantity + 1 <= CurrentOrder?.Product.UnitsInStock)
+                    {
+                        CurrentOrder.Quantity++;
+                    }
+                    ShowCartOrderInEdit(orders, true);
+                }
+                else if (key == ConsoleKey.DownArrow)
+                {
+                    if (CurrentOrder?.Quantity - 1 >= 1)
+                    {
+                        CurrentOrder.Quantity--;
+                    }
+                    ShowCartOrderInEdit(orders, true);
+                }
+            }
             return;
 
         }

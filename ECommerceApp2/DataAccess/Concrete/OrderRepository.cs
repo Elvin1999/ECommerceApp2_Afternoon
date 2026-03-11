@@ -88,6 +88,26 @@ namespace ECommerceApp2.DataAccess.Concrete
             throw new NotImplementedException();
         }
 
+        public bool UpdateOrders(IEnumerable<Order> orders)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                StringBuilder sb = new StringBuilder();
+                foreach (var order in orders)
+                {
+                    var sql = $@"
+                UPDATE Orders 
+                Set Quantity={order.Quantity}
+                WHERE Id={order.Id}
+                ";
+                    sb.Append(sql);
+                }
+
+                var res = connection.Execute(sb.ToString());
+                return res > 0;
+            }
+        }
+
         public bool UpdateOrderQuantity(Order order, int quantity)
         {
             using (var connection=new SqlConnection(_connectionString))
